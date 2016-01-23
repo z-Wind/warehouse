@@ -1,0 +1,162 @@
+﻿{% extends 'base.html' %}
+{% load myfilters %}
+{% block formContent %}
+<!-- form inquiry -->
+<div class="row" id="inquiryDatas">
+    <form action="#inquiryDatas" method="get">
+        <table class="table table-bordered">
+            <caption>查詢項目</caption>
+            <tr>
+                <th>{{ inquiry.kind.label }}</th>
+                <th>{{ inquiry.type.label }}</th>
+                <th>{{ inquiry.partNumber.label }}</th>
+                {% if have_status %}
+                <th>{{inquiry.status.label}}</th>
+                {% endif %}
+                {% if have_department %}
+                <th>{{ inquiry.department.label }}</th>
+                {% endif %}
+                {% if have_person %}
+                <th>{{ inquiry.person.label }}</th>
+                {% endif %}
+                {% if have_toDepartment %}
+                <th>{{ inquiry.toDepartment.label }}</th>
+                {% endif %}
+                {% if have_date %}
+                <th>{{ inquiry.fromDate.label }}</th>
+                <th>{{ inquiry.toDate.label }}</th>
+                {% endif %}
+            </tr>
+            <tr>
+                <td>
+                    {{inquiry.kind}}
+                    {{inquiry.kind.errors}}
+                </td>
+                <td>
+                    {{inquiry.type}}
+                    {{inquiry.type.errors}}
+                </td>
+                <td>
+                    {{inquiry.partNumber}}
+                    {{inquiry.partNumber.errors}}
+                </td>
+                {% if have_status %}
+                <td>
+                    {{inquiry.status}}
+                    {{inquiry.status.errors}}
+                </td>
+                {% endif %}
+                {% if have_department %}
+                <td width="140pm">
+                    {{inquiry.department}}
+                    {{inquiry.department.errors}}
+                </td>
+                {% endif %}
+                {% if have_person %}
+                <td>
+                    {{inquiry.person}}
+                    {{inquiry.person.errors}}
+                </td>
+                {% if have_toDepartment %}
+                <td width="140pm">
+                    {{inquiry.toDepartment}}
+                    {{inquiry.toDepartment.errors}}
+                </td>
+                {% endif %}
+                {% endif %}
+                {% if have_date %}
+                <td>
+                    {{inquiry.fromDate}}
+                    {{inquiry.fromDate.errors}}
+                </td>
+                <td>
+                    {{inquiry.toDate}}
+                    {{inquiry.toDate.errors}}
+                </td>
+                {% endif %}
+            </tr>
+        </table>
+        <input type="hidden" name="ok" value="yes">
+        <input type="submit" class="btn btn-default" name="inquiry" value="查詢">
+        <input type="submit" class="btn btn-primary" name="inquiry" value="下載">
+    </form>
+</div>
+{% endblock %}
+
+{% block dataTable %}
+<!-- data Table -->
+<div class="row" id="rawDatas">
+    <table class="table table-bordered table-hover table-condensed blueTable">
+        <caption>詳細資料</caption>
+        <thead>
+            <tr>
+            {% for tablehead in tableheads %}
+                <th>{{tablehead}}</th>
+            {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for rowdatas in tabledatas %}
+                <tr>
+                    {% for data in rowdatas %}
+                        <td>{{data}}</td>
+                    {% endfor %}
+                </tr>
+            {% empty %}
+                <h1>無資料</h1>
+            {% endfor %}
+        <tbody>
+    </table>
+</div>
+<!-- pagination -->
+{% if page.paginator.num_pages != 1%}
+    <nav>
+        <div class="text-center">
+            <ul class="pagination">
+                <li {% if page.number == 1 %}class="disabled"{% endif %}>
+                    <a {% if page.number != 1 %}class="disabled" href="?page=1#rawDatas"{% endif %}>第一頁</a>
+                </li>
+                <li {% if not page.has_previous %}class="disabled"{% endif %}>
+                    <a href="?page={{ page.number|add:-1 }}{{ search }}#rawDatas">
+                        <span aria-hidden="true">&laquo;</span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                </li>
+                {# page.paginator.page_range 這個函數返回包含一個所有頁碼數的 range 對象 #}
+                {# 即 range(1, page.paginator.num_pages + 1) #}
+                {% for page_show in page.paginator.page_range %}
+                    {% if page_show == page.number %}
+                        <li class="active"><span>{% if page_show < 10%}0{% endif %}{{ page_show }} <span class="sr-only">(current)</span></span></li>
+                    {% else %}
+                        {% if page.number <= 6%}
+                            {% if page_show <= page.number or page_show <= 11 %}
+                                <li><a href="?page={{ page_show }}{{ search }}#rawDatas">{% if page_show < 10%}0{% endif %}{{ page_show }}</a></li>
+                            {% endif %}
+                        {% else %}
+                            {% if page.number > page.paginator.num_pages|subtract:6 %}
+                                {% if page_show >= page.number or page_show > page.paginator.num_pages|subtract:11 %}
+                                    <li><a href="?page={{ page_show }}{{ search }}#rawDatas">{% if page_show < 10%}0{% endif %}{{ page_show }}</a></li>
+                                {% endif %}
+                            {% else %}{# page.number > 6 and page.number <= page.paginator.num_pages|subtract:6 #}
+                                {% if page.number|subtract:page_show <= 5 and page.number|subtract:page_show >= -5 %}
+                                    <li><a href="?page={{ page_show }}{{ search }}#rawDatas">{% if page_show < 10%}0{% endif %}{{ page_show }}</a></li>
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                <li {% if not page.has_next %}class="disabled"{% endif %}>
+                    <a href="?page={{ page.number|add:1 }}{{ search }}#rawDatas">
+                        <span aria-hidden="true">&raquo;</span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </li>
+
+                <li {% if page.number == page.paginator.num_pages %}class="disabled"{% endif %}>
+                    <a {% if page.number != page.paginator.num_pages %}href="?page={{page.paginator.num_pages}}{{ search }}#rawDatas"{% endif %}>最末頁</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+{% endif %}
+{% endblock %}

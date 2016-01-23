@@ -1,0 +1,6 @@
+https://httpd.apache.org/docs/2.4/programs/httpd.html
+
+httpd.exe -k install 安裝至服務
+httpd.exe -t 除錯
+httpd -S 目前的設定
+httpd -n name 設定服務名字

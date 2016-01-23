@@ -1,0 +1,85 @@
+{% extends 'history.html' %}
+{% load staticfiles %}
+{% block overview %}
+<!-- overview -->
+<div class="jumbotron" style="padding-top: 3px;">
+    <table class="table table-bordered table-striped blueTable">
+        <caption>{{overviewToolCaption}}</caption>
+        <thead>
+            <tr>
+            {% for tablehead in overviewToolTableheads %}
+                <th>{{tablehead}}</th>
+            {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for rowdatas in overviewToolTabledatas %}
+                <tr>
+                    {% for data in rowdatas %}
+                        <td>{{data}}</td>
+                    {% endfor %}
+                </tr>
+            {% empty %}
+                <h1>無資料</h1>
+            {% endfor %}
+        <tbody>
+    </table>
+    <div id="tool-flot-placeholder"></div>
+    
+    <table class="table table-bordered table-striped blueTable">
+        <caption>{{overviewCableCaption}}</caption>
+        <thead>
+            <tr>
+            {% for tablehead in overviewCableTableheads %}
+                <th>{{tablehead}}</th>
+            {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for rowdatas in overviewCableTabledatas %}
+                <tr>
+                    {% for data in rowdatas %}
+                        <td>{{data}}</td>
+                    {% endfor %}
+                </tr>
+            {% empty %}
+                <h1>無資料</h1>
+            {% endfor %}
+        <tbody>
+    </table>
+    <div id="cable-flot-placeholder"></div>
+</div>
+{% endblock %}
+
+{% block script %}
+    <!--[if lte IE 8]>
+    <script language="javascript" type="text/javascript" src="{% static 'flot/excanvas.min.js' %}"></script>
+    <![endif]-->
+    <!-- flot -->
+    <script type="text/javascript" src="{% static 'flot/jquery.flot.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'flot/jquery.flot.axislabels.js' %}"></script>
+    <script type="text/javascript" src="{% static 'flot/jquery.flot.stack.js' %}"></script>
+    <script src="{% static 'manual/scriptfile.js' %}"></script>
+    <script type="text/javascript">
+        var ticks = [{% for rowdatas in overviewToolTabledatas %}{% if not forloop.first %}, {% endif %}[{{ forloop.counter0 }}, "{{ rowdatas.0 }}"]{% endfor %}];
+        
+        var dataToolW1 = [{% for rowdatas in overviewToolTabledatas %}{% if not forloop.first %}, {% endif %}[{{ forloop.counter0 }}, {{ rowdatas.5 }}]{% endfor %}];
+        var dataToolW2 = [{% for rowdatas in overviewToolTabledatas %}{% if not forloop.first %}, {% endif %}[{{ forloop.counter0 }}, {{ rowdatas.7 }}]{% endfor %}];
+        
+        var dataCableW1 = [{% for rowdatas in overviewCableTabledatas %}{% if not forloop.first %}, {% endif %}[{{ forloop.counter0 }}, {{ rowdatas.5 }}]{% endfor %}];
+        var dataCableW2 = [{% for rowdatas in overviewCableTabledatas %}{% if not forloop.first %}, {% endif %}[{{ forloop.counter0 }}, {{ rowdatas.7 }}]{% endfor %}];
+         
+        $(document).ready(function () {
+            plotStack("#tool-flot-placeholder", dataToolW1, dataToolW2, ticks);
+            $("#tool-flot-placeholder").UseTooltip();
+            plotStack("#cable-flot-placeholder", dataCableW1, dataCableW2, ticks);     
+            $("#cable-flot-placeholder").UseTooltip();
+        });
+
+    </script>
+    <!--[if lte IE 8]>
+    <script language="javascript" type="text/javascript">
+        alert("請使用 IE9 以上的版本，或使用 Chrome or Firefox，以達到最佳瀏覽效果")
+    </script>
+    <![endif]-->
+{% endblock %}

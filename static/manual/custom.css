@@ -1,0 +1,94 @@
+/* 預留上方空間 */
+body {
+    padding-top: 50px;
+}
+
+/* 設定上面導覽列 */
+nav{
+    font-size: 16px;
+}
+
+/* 查詢表單 */
+#id_kind, #id_status, #id_department, #id_toDepartment {
+    padding: 0px;
+}
+
+#id_kind  > li, #id_status > li {
+    list-style-type: none;
+}
+
+#id_department > li, #id_toDepartment > li{
+    display: inline;
+}
+
+/* 右邊型號選單 */
+.rightList {
+    visibility: hidden;
+    display: inline;
+    top: 0px;
+    float: left;
+}
+
+/* 登記填入表單 */
+.leftInputDiv {
+    display: inline;
+    float: left;
+}
+
+/* 錯誤設定 */
+.errorStyle, .errorlist {
+    color:red;
+}
+
+/* 設定圖表 */
+#tool-flot-placeholder, #cable-flot-placeholder{
+    width:100%;
+    height:250px;
+}
+
+/* 表格標題設定 */
+caption {
+    text-align: center;
+    font-weight: bold;
+    font-size: 25px;
+}
+
+/* 褐色表格設定 */
+.brownTable tr:nth-child(2n+2){
+    background-color: #FFDAB9;
+}
+
+.brownTable tr:nth-child(2n+1){
+    background-color: #fff;
+}
+
+.brownTable th {
+    color: white;
+    background-color: #CD853F;
+}
+
+.brownTable caption {
+    /*color: yellow;
+    background-color: #8B4513;*/
+}
+
+/* 藍色表格設定 */
+.blueTable caption {
+    /*color: #FFFFFF;
+    background-color: #0000CC;*/
+}
+
+.blueTable th {
+    color: #0000CD;
+    background-color: #77DDFF ;
+}
+
+.blueTable  tr:nth-child(2n+2){
+    background-color: #BBFFEE;
+    color: #000000;
+}
+
+.blueTable  tr:nth-child(2n+1){
+    background-color: #FFFFFF;
+    color: #000000;
+}
