@@ -9,6 +9,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils.six.moves import range
 from django.http import StreamingHttpResponse
 from django.db.models import Q, Sum
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 import datetime
@@ -20,13 +21,14 @@ from .models import *
 from .forms import *
 from . import choices
 
-#global variable
-alldatas = {'name':None, 'data':[]}
+# global variable
+alldatas = {'name': None, 'data': []}
+
 
 # page
-def page_setting(objs, pageNum, dataNum = 50):
+def page_setting(objs, pageNum, dataNum=50):
     # Show n contacts per page
-    paginator = Paginator(objs, per_page = dataNum)
+    paginator = Paginator(objs, per_page=dataNum)
 
     try:
         page = paginator.page(pageNum)
@@ -44,27 +46,27 @@ def page_setting(objs, pageNum, dataNum = 50):
 
 
 # inquiry and filter
-def objsInquiryFilter(objs, inquiry, afterShow = False):
+def objsInquiryFilter(objs, inquiry, afterShow=False, checkToPerson=False):
     fnameList = objs.model._meta.get_all_field_names()
     # 尋找分類
     if inquiry.is_valid():
         type = inquiry.cleaned_data['type'].strip()
-        if type: # contain str
+        if type:  # contain str
             if objs.model is Good:
-                objs = objs.filter(type__icontains = type)
+                objs = objs.filter(type__icontains=type)
             elif 'good' in fnameList:
-                objs = objs.filter(good__type__icontains = type)
+                objs = objs.filter(good__type__icontains=type)
 
         partNumber = inquiry.cleaned_data['partNumber'].strip()
         if partNumber:
             if objs.model is Good:
-                objs = objs.filter(Q(partNumber__icontains = partNumber) \
-                                 | Q(partNumber_once__icontains = partNumber) \
-                                 | Q(partNumber_old__icontains = partNumber))
+                objs = objs.filter(Q(partNumber__icontains=partNumber) \
+                                   | Q(partNumber_once__icontains=partNumber) \
+                                   | Q(partNumber_old__icontains=partNumber))
             elif 'good' in fnameList:
-                objs = objs.filter(Q(good__partNumber__icontains = partNumber) \
-                                 | Q(good__partNumber_once__icontains = partNumber) \
-                                 | Q(good__partNumber_old__icontains = partNumber))
+                objs = objs.filter(Q(good__partNumber__icontains=partNumber) \
+                                   | Q(good__partNumber_once__icontains=partNumber) \
+                                   | Q(good__partNumber_old__icontains=partNumber))
 
         kinds = inquiry.cleaned_data['kind']
         if kinds:
@@ -98,7 +100,7 @@ def objsInquiryFilter(objs, inquiry, afterShow = False):
                 min_dt = fromDate
                 max_dt = toDate
                 objs = objs.filter(date__range=(min_dt, max_dt))
-            elif 'datetime'  in fnameList:
+            elif 'datetime' in fnameList:
                 tz = pytz.timezone('Asia/Taipei')
                 min_dt = tz.localize(datetime.datetime.combine(fromDate, datetime.time.min))
                 max_dt = tz.localize(datetime.datetime.combine(toDate, datetime.time.max))
@@ -110,18 +112,25 @@ def objsInquiryFilter(objs, inquiry, afterShow = False):
                 objs = objs.filter(status__code__in = status)
 
         person = inquiry.cleaned_data['person']
-        if person: # contain str
+        if person and not checkToPerson: # contain str
             if objs.model is Person:
                 objs = objs.filter(name__icontains = person)
             elif 'person' in fnameList:
                 objs = objs.filter(person__name__icontains = person)
+
+        toPerson = inquiry.cleaned_data['toPerson']
+        if toPerson and checkToPerson: # contain str
+            if objs.model is Person:
+                objs = objs.filter(name__icontains = toPerson)
+            elif 'person' in fnameList:
+                objs = objs.filter(person__name__icontains = toPerson)
     else:
         if afterShow:
             tz = pytz.timezone('Asia/Taipei')
             afterdate = tz.localize(datetime.datetime.now() - datetime.timedelta(days=3))
             if 'date' in fnameList:
                 objs = objs.filter(date__gte=afterdate)
-            elif 'datetime'  in fnameList:
+            elif 'datetime' in fnameList:
                 objs = objs.filter(datetime__gte=afterdate)
 
 
@@ -131,7 +140,7 @@ def objsInquiryFilter(objs, inquiry, afterShow = False):
 # get obj data by table heads
 def getRowDatas(obj, tableHeads):
     rowDatas = []
-    obj_names = {f.verbose_name:f.name for f in obj._meta.fields}
+    obj_names = {f.verbose_name: f.name for f in obj._meta.fields}
     for tableHead in tableHeads:
         if tableHead == '料號':
             if obj.partNumber:
@@ -142,23 +151,30 @@ def getRowDatas(obj, tableHeads):
                 rowDatas += [obj.partNumber_old]
         elif tableHead == '種類':
             if type(obj) is Good:
-                rowDatas += [obj.kind.name]
+                rowDatas += [obj.kind]
+            else:
+                rowDatas += [getattr(obj, obj_names[tableHead])]
+        elif tableHead == '縮圖':
+            if type(obj) is Good:
+                if obj.thumbnail:
+                    rowDatas += [obj.thumbnail.url]
+                else:
+                    rowDatas += ['NA']
             else:
                 rowDatas += [getattr(obj, obj_names[tableHead])]
         elif tableHead == '狀態':
             if type(obj) is GoodWastage:
-                rowDatas += [obj.status.name]
+                rowDatas += [obj.status]
             else:
                 rowDatas += [getattr(obj, obj_names[tableHead])]
         elif obj_names[tableHead] == 'datetime':
             tz = pytz.timezone('Asia/Taipei')
-            datetimeEX = getattr(obj,obj_names[tableHead]).astimezone(tz)
+            datetimeEX = getattr(obj, obj_names[tableHead]).astimezone(tz)
             rowDatas += [datetimeEX.strftime('%Y/%m/%d %H:%M')]
         elif tableHead in obj_names:
-            rowDatas += [getattr(obj,obj_names[tableHead])]
+            rowDatas += [getattr(obj, obj_names[tableHead])]
         else:
             rowDatas += [tableHead]
-
 
     return rowDatas
 
@@ -180,7 +196,7 @@ def findkey(dic, value):
     return key
 
 
-#for test
+# for test
 def test(request):
     return render(request, 'test/3.html', locals())
 
@@ -193,6 +209,10 @@ def overview(request):
     overviewToolCaption = '治具總覽'
     overviewCableCaption = '線材總覽'
     have_department = True
+    if request.GET.get('inquiry') == "查詢":
+        detail = True
+    else:
+        detail = False
 
     # overview
     overviewTableheads = [GoodInventory._meta.get_field_by_name(f.name)[0].verbose_name \
@@ -222,7 +242,7 @@ def overview(request):
             inventory_future = noneToZero(GoodBuy.objects.filter(person__department = department, date__gt=datetime.datetime.now(), good__kind = kind).aggregate(Sum('quantity'))['quantity__sum'])
 
             try:
-                overviewTabledatas += [[department.name,
+                overviewTabledatas += [[department,
                                         inventory_total - inventory_future,
                                         used,
                                         req - back,
@@ -232,7 +252,7 @@ def overview(request):
                                         '{:.2f}'.format(scraped/(req - back)*100),
                                         ]]
             except ZeroDivisionError:
-                overviewTabledatas += [[department.name,
+                overviewTabledatas += [[department,
                                         inventory_total - inventory_future,
                                         used,
                                         req - back,
@@ -264,8 +284,8 @@ def overview(request):
                     wastage = noneToZero(objsInquiryFilter(good.goodwastage_set.filter(person__department = department), inquiry).aggregate(Sum('quantity'))['quantity__sum'])
                     used = req - back - wastage
 
-                    lost = noneToZero(objsInquiryFilter(good.goodwastage_set.filter(person__department = department, status__name = '報廢'), inquiry).aggregate(Sum('quantity'))['quantity__sum'])
-                    scraped = noneToZero(objsInquiryFilter(good.goodwastage_set.filter(person__department = department, status__name = '遺失'), inquiry).aggregate(Sum('quantity'))['quantity__sum'])
+                    lost = noneToZero(objsInquiryFilter(good.goodwastage_set.filter(person__department = department, status__name = '遺失'), inquiry).aggregate(Sum('quantity'))['quantity__sum'])
+                    scraped = noneToZero(objsInquiryFilter(good.goodwastage_set.filter(person__department = department, status__name = '報廢'), inquiry).aggregate(Sum('quantity'))['quantity__sum'])
 
                     inventory_total = noneToZero(good.goodinventory_set.filter(department = department).aggregate(Sum('quantity'))['quantity__sum'])
                     tz = pytz.timezone('Asia/Taipei')
@@ -274,12 +294,12 @@ def overview(request):
                     if used > 0 or lost > 0 or scraped > 0:
                         try:
                             alldatas['data'] += [getRowDatas(good, tableheads[:3])
-                                        + [department.name, used, req - back,
+                                        + [department, used, req - back,
                                             lost, '{:.2f}'.format(lost/(req - back)*100),
                                             scraped, '{:.2f}'.format(scraped/(req - back)*100),]]
                         except ZeroDivisionError:
                             alldatas['data'] += [getRowDatas(good, tableheads[:3])
-                                        + [department.name, used, req - back,
+                                        + [department, used, req - back,
                                             lost, '0.00',
                                             scraped, '0.00']]
 
@@ -326,7 +346,80 @@ def ownerView(request):
                     used = req - back - wastage
 
                     if req > 0 or back > 0 or wastage > 0 or used > 0:
-                        alldatas['data'] += [getRowDatas(good, tableheads[:3]) + [person.department, person.name, used, req, back, wastage]]
+                        alldatas['data'] += [getRowDatas(good, tableheads[:3]) + [person.department, person, used, req, back, wastage]]
+
+        if request.GET['inquiry'] == '下載':
+            return streaming_csv_download([tableheads]+alldatas['data'])
+
+        page = page_setting(alldatas['data'], request.GET.get('page'))
+        tabledatas = page.object_list
+    else:
+        inquiry = GoodInquiryForm()
+
+    get = request.GET.copy()
+    try:
+        get.pop('page')
+    except KeyError:
+        pass
+    search = get.urlencode()
+    search = '&' + search if search else ''
+
+    return render(request, 'history.html', locals())
+
+
+def lendBackView(request):
+    global alldatas
+    nbar_now = 'lendBackView'
+    title = 'lendBackView'
+    caption = '外借推測'
+    have_date = True
+    have_person = True
+    have_department = True
+    have_toDepartment = True
+    have_toPerson = True
+
+    tableheads = ['種類', '型號', '料號', '借出部門', '借出人', '調入部門', '借入人', '數量', '備註', '日期']
+
+    if 'ok' in request.GET:
+        inquiry = GoodInquiryForm(request.GET)
+
+        if not request.GET.get('page') or alldatas['name'] != title:
+            alldatas['name'] = title
+            alldatas['data'] = []
+
+            for allocateData in objsInquiryFilter(GoodAllocate.objects.all(), inquiry):
+                try:
+                    lend = objsInquiryFilter(GoodRequisition.objects.all(), inquiry, checkToPerson=True).get(good=allocateData.good, datetime=allocateData.datetime, quantity=allocateData.quantity, remark=allocateData.remark)
+                    alldatas['data'] += [getRowDatas(allocateData.good, tableheads[0:3]) +
+                        [allocateData.person.department, allocateData.person, allocateData.toDepartment,
+                         lend.person, lend.quantity, allocateData.remark, allocateData.datetime]]
+                except GoodRequisition.DoesNotExist:
+                    pass
+                except GoodRequisition.MultipleObjectsReturned:
+                    pass
+
+                try:
+                    back = objsInquiryFilter(GoodBack.objects.all(), inquiry, checkToPerson=True).get(good=allocateData.good, datetime=allocateData.datetime, quantity=allocateData.quantity, remark=allocateData.remark)
+                    alldatas['data'] += [getRowDatas(allocateData.good, tableheads[0:3]) +
+                        [allocateData.person.department, allocateData.person, allocateData.toDepartment,
+                         back.person, -back.quantity, allocateData.remark, allocateData.datetime]]
+                except GoodBack.DoesNotExist:
+                    pass
+                except GoodBack.MultipleObjectsReturned:
+                    pass
+
+        l = len(alldatas['data'])
+        for i in range(0, l):
+            b = alldatas['data'][i]
+            if b[4] == b[6] and b[7] != 0:
+                for j in range(-1, -l-1,-1):
+                    d = alldatas['data'][j]
+                    if alldatas['data'][j][7] != 0 and b[1] == d[1] and b[2] == d[2] and b[3] == d[5] and b[5] == d[3] and b[6] == d[6]:
+                        alldatas['data'][j][7] = b[7] + d[7]
+                        alldatas['data'][i][7] = 0
+
+        alldatas['data'] = [d for d in alldatas['data'] if d[7] != 0]
+
 
         if request.GET['inquiry'] == '下載':
             return streaming_csv_download([tableheads]+alldatas['data'])
@@ -354,7 +447,7 @@ def inventory(request):
     caption = '庫存'
     have_department = True
 
-    tableheads = ['種類', '型號', '料號', '部門', '庫存數量', '進貨中']
+    tableheads = ['種類', '型號', '料號', '部門', '庫存數量', '進貨中', '縮圖']
 
     if 'ok' in request.GET:
         inquiry = GoodInquiryForm(request.GET)
@@ -367,10 +460,13 @@ def inventory(request):
 
         for obj in objsInquiryFilter(GoodInventory.objects.all(), inquiry):
             inventory_total = obj.quantity
-            inventory_future = noneToZero(GoodBuy.objects.filter(good = obj.good, date__gt=datetime.datetime.now(), person__department__name = obj.department).aggregate(Sum('quantity'))['quantity__sum'])
+            inventory_future = noneToZero(GoodBuy.objects.filter(good=obj.good, date__gt=datetime.datetime.now(), person__department__name = obj.department).aggregate(Sum('quantity'))['quantity__sum'])
 
             if inventory_total > 0 or inventory_future > 0:
-                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + getRowDatas(obj, [tableheads[3]]) + [inventory_total-inventory_future, inventory_future]]
+                alldatas['data'] += [getRowDatas(obj.good, tableheads[:3]) +
+                                     getRowDatas(obj, [tableheads[3]]) +
+                                     [inventory_total-inventory_future, inventory_future] +
+                                     getRowDatas(obj.good, [tableheads[-1]])]
 
     if 'ok' in request.GET:
         if request.GET['inquiry'] == '下載':
@@ -387,9 +483,10 @@ def inventory(request):
     search = get.urlencode()
     search = '&' + search if search else ''
 
-    return render(request, 'history.html',locals())
+    return render(request, 'history.html', locals())
 
 
+@login_required(login_url='/accounts/login/')
 def allocate(request):
     nbar_now = 'allocate'
     title = 'Allocate'
@@ -402,7 +499,7 @@ def allocate(request):
     else:
         errors += ['沒治具可調囉']
 
-    if 'ok' in request.GET or 'good_type' in request.POST:
+    if 'ok' in request.POST or 'good_type' in request.POST:
         goodtype = request.POST['good_type']
         f = GoodAllocateForm(request.POST)
     else:
@@ -488,7 +585,7 @@ def allocateHistory(request):
 
         for obj in objsInquiryFilter(GoodAllocate.objects.all(), inquiry, afterShow=True):
             if obj.quantity > 0:
-                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department.name, obj.person.name] + getRowDatas(obj, tableheads[5:])]
+                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department, obj.person] + getRowDatas(obj, tableheads[5:])]
 
     if 'ok' in request.GET:
         if request.GET['inquiry'] == '下載':
@@ -508,6 +605,7 @@ def allocateHistory(request):
     return render(request, 'history.html',locals())
 
 
+@login_required(login_url='/accounts/login/')
 def buy(request):
     nbar_now = 'buy'
     title = 'Buy'
@@ -516,7 +614,7 @@ def buy(request):
     people = [person.__str__() for person in Person.objects.all()]
     goods = [good for good in Good.objects.all()]
 
-    if 'ok' in request.GET or 'good_type' in request.POST:
+    if 'ok' in request.POST or 'good_type' in request.POST:
         goodtype = request.POST['good_type']
         f = GoodBuyForm(request.POST)
     else:
@@ -585,7 +683,7 @@ def buyHistory(request):
 
         for obj in objsInquiryFilter(GoodBuy.objects.all(), inquiry, afterShow=True):
             if obj.quantity > 0:
-                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department.name, obj.person.name] + getRowDatas(obj, tableheads[5:])]
+                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department, obj.person] + getRowDatas(obj, tableheads[5:])]
 
     if 'ok' in request.GET:
         if request.GET['inquiry'] == '下載':
@@ -605,15 +703,111 @@ def buyHistory(request):
     return render(request, 'history.html',locals())
 
 
-def back(request):
+def backCheck(gtype, quantity, person):
+    errors = []
+    good = None
+
+    try:
+        good = Good.objects.get(type=gtype)
+    except Good.DoesNotExist:
+        errors += ['無此治具"{}"'.format(gtype)]
+    except Good.MultipleObjectsReturned:
+        errors += ['治具"{}"名字重覆，請告知窗口修正'.format(gtype)]
+
+    if not errors:
+        req = noneToZero(person.goodrequisition_set.filter(good=good).aggregate(Sum('quantity'))['quantity__sum'])
+        back = noneToZero(person.goodback_set.filter(good=good).aggregate(Sum('quantity'))['quantity__sum'])
+        wastage = noneToZero(person.goodwastage_set.filter(good=good).aggregate(Sum('quantity'))['quantity__sum'])
+        used = req - back - wastage
+
+        if quantity > used:
+            errors += ['%s持有數量只有 %d，無法歸還' %(person, used)]
+
+    return (errors, good)
+
+
+@login_required(login_url='/accounts/login/')
+def backBatch(request):
     nbar_now = 'back'
     title = 'Back'
     caption = '歸還'
     errors = []
+
+    tableheads = ['種類', '型號', '料號', '調入部門', '調入人', '部門', '歸還人', '數量', '備註', '結果']
+    tabledatas = []
+
+    n = 0
+    filecsv = request.POST['file']
+    for line in filecsv.split("\\n"):
+        n += 1
+        if n == 1:
+            continue
+        if line == "":
+            continue
+
+        data = line.split(",")
+        if len(data) >= len(tableheads)-2:
+            while len(data) < len(tableheads):
+                data += [""]
+
+            person, created = Person.objects.get_or_create(name=data[6].strip(), department=Department.objects.get(name=data[5]))
+            personTo, created = Person.objects.get_or_create(name=data[4].strip(), department=Department.objects.get(name=data[3]))
+            errors, good = backCheck(data[1], int(data[7]), person)
+            if not errors:
+                quantity = int(data[7])
+                department = person.department
+                toDepartment = personTo.department
+                remark = data[-2]
+                tz = pytz.timezone('Asia/Taipei')
+                datetimeEX = tz.localize(datetime.datetime.now())
+
+                try:
+                    who = socket.gethostbyaddr(request.META['REMOTE_ADDR'])[0]
+                except:
+                    who = request.META['REMOTE_ADDR']
+
+                gb = GoodBack.objects.create(good=good, person=person, datetime=datetimeEX, quantity=quantity, remark=remark, who=who)
+
+                if data[3] != data[5]:
+                    ga = GoodAllocate.objects.create(good = good, person = person, toDepartment = toDepartment, datetime = datetimeEX, quantity = quantity, remark = remark, who = who)
+                    pass
+
+                gi, created = GoodInventory.objects.get_or_create(department=toDepartment, good=good, defaults={'quantity':quantity, 'remark':'', 'who':'backBatchAuto'})
+                if not created:
+                    gi.quantity += quantity
+                    gi.save()
+
+                data[-1] = "成功"
+            else:
+                data[-1] = errors
+
+
+            data[3] = personTo.department
+            data[4] = personTo
+            data[5] = person.department
+            data[6] = person
+            tabledatas.append(data)
+
+    return render(request, 'batchResult.html', locals())
+
+
+@login_required(login_url='/accounts/login/')
+def back(request):
+    nbar_now = 'back'
+    title = 'Back'
+    caption = '歸還'
+    have_batch = True
+    url_batch = reverse("goodsManage_backBatch")
+    errors = []
     people = [person.__str__() for person in Person.objects.all()]
     goods = [good for good in Good.objects.all()]
 
-    if 'ok' in request.GET or 'good_type' in request.POST:
+    tableheads = ['種類', '型號', '料號', '調入部門', '調入人', '部門', '歸還人', '數量', '備註']
+    if 'ok' in request.GET:
+        if request.GET['batchInquiry'] == '批次範例下載':
+            return streaming_csv_download([tableheads])
+
+    if 'ok' in request.POST or 'good_type' in request.POST:
         goodtype = request.POST['good_type']
         f = GoodBackForm(request.POST)
     else:
@@ -659,18 +853,26 @@ def back(request):
             f = GoodBackForm()
             return redirect(reverse("goodsManage_backHistory"))
 
-    return render(request, 'inputForm.html',locals())
+    return render(request, 'inputForm.html', locals())
 
 
+@login_required(login_url='/accounts/login/')
 def backOuter(request):
     nbar_now = 'back'
     title = 'Back Outer'
     caption = '歸還'
+    have_batch = True
+    url_batch = reverse("goodsManage_backBatch")
     errors = []
     people = [person.__str__() for person in Person.objects.all()]
     goods = [good for good in Good.objects.all()]
 
-    if 'ok' in request.GET or 'good_type' in request.POST:
+    tableheads = ['種類', '型號', '料號', '調入部門', '調入人', '部門', '歸還人', '數量', '備註']
+    if 'ok' in request.GET:
+        if request.GET['batchInquiry'] == '批次範例下載':
+            return streaming_csv_download([tableheads])
+
+    if 'ok' in request.POST or 'good_type' in request.POST:
         goodtype = request.POST['good_type']
         f = GoodBackOuterForm(request.POST)
     else:
@@ -748,7 +950,7 @@ def backHistory(request):
 
         for obj in objsInquiryFilter(GoodBack.objects.all(), inquiry, afterShow=True):
             if obj.quantity > 0:
-                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department.name, obj.person.name] + getRowDatas(obj, tableheads[5:])]
+                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department, obj.person] + getRowDatas(obj, tableheads[5:])]
 
     if 'ok' in request.GET:
         if request.GET['inquiry'] == '下載':
@@ -768,18 +970,120 @@ def backHistory(request):
     return render(request, 'history.html',locals())
 
 
-def requisition(request):
-    nbar_now = 'requisition'
-    title = 'Requisition'
-    caption = '領用'
+def requisitionCheck(gtype, quantity, person, personFrom):
     errors = []
-    people = [person.__str__() for person in Person.objects.all()]
+    good = None
+    gifrom = None
     if noneToZero(GoodInventory.objects.all().aggregate(Sum('quantity'))['quantity__sum']) > 0:
         goods = [good for good in Good.objects.all()]
     else:
         errors += ['治具已清空，下次請早']
 
-    if 'ok' in request.GET or 'good_type' in request.POST:
+    try:
+        good = Good.objects.get(type=gtype)
+    except Good.DoesNotExist:
+        errors += ['無此治具"{}"'.format(gtype)]
+    except Good.MultipleObjectsReturned:
+        errors += ['治具"{}"名字重覆，請告知窗口修正'.format(gtype)]
+
+    if not errors:
+        try:
+            gifrom = GoodInventory.objects.get(department=personFrom.department, good=good)
+
+            tz = pytz.timezone('Asia/Taipei')
+            inventory_future = noneToZero(good.goodbuy_set.filter(person__department=personFrom.department, date__gt = datetime.datetime.now()).aggregate(Sum('quantity'))['quantity__sum'])
+
+            if quantity > gifrom.quantity - inventory_future:
+                errors += ['{}數量只剩 {}，無法調撥領用'.format(personFrom.department.name, gifrom.quantity-inventory_future)]
+
+        except GoodInventory.DoesNotExist:
+            errors += ['{}數量為 0，無法調撥領用'.format(personFrom.department.name)]
+
+    return (errors, good, gifrom)
+
+
+@login_required(login_url='/accounts/login/')
+def requisitionBatch(request):
+    nbar_now = 'requisition'
+    title = 'Requisition Outer'
+    caption = '領用'
+    errors = []
+
+    tableheads = ['種類', '型號', '料號', '調出部門', '調出人', '部門', '領用人', '數量', '備註', '結果']
+    tabledatas = []
+
+    n = 0
+    filecsv = request.POST['file']
+    for line in filecsv.split("\\n"):
+        n += 1
+        if n == 1:
+            continue
+        if line == "":
+            continue
+
+        data = line.split(",")
+        if len(data) >= len(tableheads)-2:
+            while len(data) < len(tableheads):
+                data += [""]
+
+            person, created = Person.objects.get_or_create(name=data[6].strip(), department=Department.objects.get(name=data[5]))
+            personFrom, created = Person.objects.get_or_create(name=data[4].strip(), department=Department.objects.get(name=data[3]))
+            (errors, good, gifrom) = requisitionCheck(data[1], int(data[7]), person, personFrom)
+            if not errors:
+                quantity = int(data[7])
+                department = person.department
+                remark = data[8]
+                tz = pytz.timezone('Asia/Taipei')
+                datetimeEX = tz.localize(datetime.datetime.now())
+
+
+                try:
+                    who = socket.gethostbyaddr(request.META['REMOTE_ADDR'])[0]
+                except:
+                    who = request.META['REMOTE_ADDR']
+
+                gifrom.quantity -= quantity
+                gifrom.save()
+
+                if data[3] != data[5]:
+                    ga = GoodAllocate.objects.create(good=good, person=personFrom, toDepartment=department, datetime=datetimeEX, quantity=quantity, remark=remark, who=who)
+
+                gr = GoodRequisition.objects.create(good=good, person=person, datetime=datetimeEX, quantity=quantity, remark=remark, who=who)
+
+                data[-1] = "成功"
+            else:
+                data[-1] = errors
+
+            data[3] = personFrom.department
+            data[4] = personFrom
+            data[5] = person.department
+            data[6] = person
+            tabledatas.append(data)
+
+    return render(request, 'batchResult.html', locals())
+
+
+@login_required(login_url='/accounts/login/')
+def requisition(request):
+    nbar_now = 'requisition'
+    title = 'Requisition'
+    caption = '領用'
+    have_batch = True
+    url_batch = reverse("goodsManage_requisitionBatch")
+    errors = []
+    people = [person.__str__() for person in Person.objects.all()]
+
+    tableheads = ['種類', '型號', '料號', '調出部門', '調出人', '部門', '領用人', '數量', '備註']
+    if 'ok' in request.GET:
+        if request.GET['batchInquiry'] == '批次範例下載':
+            return streaming_csv_download([tableheads])
+
+    if noneToZero(GoodInventory.objects.all().aggregate(Sum('quantity'))['quantity__sum']) > 0:
+        goods = [good for good in Good.objects.all()]
+    else:
+        errors += ['治具已清空，下次請早']
+
+    if 'ok' in request.POST or 'good_type' in request.POST:
         goodtype = request.POST['good_type']
         f = GoodRequisitionForm(request.POST)
     else:
@@ -849,18 +1153,27 @@ def requisition(request):
     return render(request, 'inputForm.html',locals())
 
 
+@login_required(login_url='/accounts/login/')
 def requisitionOuter(request):
     nbar_now = 'requisition'
     title = 'Requisition Outer'
     caption = '領用'
+    have_batch = True
+    url_batch = reverse("goodsManage_requisitionBatch")
     errors = []
     people = [person.__str__() for person in Person.objects.all()]
+
+    tableheads = ['種類', '型號', '料號', '調出部門', '調出人', '部門', '領用人', '數量', '備註']
+    if 'ok' in request.GET:
+        if request.GET['batchInquiry'] == '批次範例下載':
+            return streaming_csv_download([tableheads])
+
     if noneToZero(GoodInventory.objects.all().aggregate(Sum('quantity'))['quantity__sum']) > 0:
         goods = [good for good in Good.objects.all()]
     else:
         errors += ['治具已清空，下次請早']
 
-    if 'ok' in request.GET or 'good_type' in request.POST:
+    if 'ok' in request.POST or 'good_type' in request.POST:
         goodtype = request.POST['good_type']
         f = GoodRequisitionOuterForm(request.POST)
     else:
@@ -958,7 +1271,7 @@ def requisitionHistory(request):
         alldatas['data'] = []
         for obj in objsInquiryFilter(GoodRequisition.objects.all(), inquiry, afterShow=True):
             if obj.quantity > 0:
-                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department.name, obj.person.name] + getRowDatas(obj, tableheads[5:])]
+                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department, obj.person] + getRowDatas(obj, tableheads[5:])]
 
     if 'ok' in request.GET:
         if request.GET['inquiry'] == '下載':
@@ -978,6 +1291,7 @@ def requisitionHistory(request):
     return render(request, 'history.html', locals())
 
 
+@login_required(login_url='/accounts/login/')
 def wastage(request):
     nbar_now = 'wastage'
     title = 'Wastage'
@@ -986,7 +1300,7 @@ def wastage(request):
     people = [person.__str__() for person in Person.objects.all()]
     goods = [good for good in Good.objects.all()]
 
-    if 'ok' in request.GET or 'good_type' in request.POST:
+    if 'ok' in request.POST or 'good_type' in request.POST:
         goodtype = request.POST['good_type']
         f = GoodWastageForm(request.POST)
     else:
@@ -1057,7 +1371,7 @@ def wastageHistory(request):
         alldatas['data'] = []
         for obj in objsInquiryFilter(GoodWastage.objects.all(), inquiry, afterShow=True):
             if obj.quantity > 0:
-                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department.name, obj.person.name] + getRowDatas(obj, tableheads[5:])]
+                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department, obj.person] + getRowDatas(obj, tableheads[5:])]
 
     if 'ok' in request.GET:
         if request.GET['inquiry'] == '下載':
@@ -1077,6 +1391,7 @@ def wastageHistory(request):
     return render(request, 'history.html',locals())
 
 
+@login_required(login_url='/accounts/login/')
 def repair(request):
     nbar_now = 'repair'
     title = 'Repair'
@@ -1085,7 +1400,7 @@ def repair(request):
     people = [person.__str__() for person in Person.objects.all()]
     goods = [good for good in Good.objects.all()]
 
-    if 'ok' in request.GET or 'good_type' in request.POST:
+    if 'ok' in request.POST or 'good_type' in request.POST:
         goodtype = request.POST['good_type']
         f = GoodRepairForm(request.POST)
     else:
@@ -1159,7 +1474,7 @@ def repairHistory(request):
 
         for obj in objsInquiryFilter(GoodRepair.objects.all(), inquiry, afterShow=True):
             if obj.quantity > 0:
-                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department.name, obj.person.name] + getRowDatas(obj, tableheads[5:])]
+                alldatas['data'] += [getRowDatas(obj.good,tableheads[:3]) + [obj.person.department, obj.person] + getRowDatas(obj, tableheads[5:])]
 
     if 'ok' in request.GET:
         if request.GET['inquiry'] == '下載':
@@ -1196,6 +1511,6 @@ def streaming_csv_download(rdatas):
     #rows = (["Row {}".format(idx), str(idx)] for idx in range(65536))
     pseudo_buffer = Echo()
     writer = csv.writer(pseudo_buffer)
-    response = StreamingHttpResponse((writer.writerow(rdata) for rdata in rdatas), content_type = "text/csv")
+    response = StreamingHttpResponse((writer.writerow(rdata) for rdata in rdatas), content_type="text/csv")
     response['Content-Disposition'] = 'attachment; filename="data.csv"'
     return response

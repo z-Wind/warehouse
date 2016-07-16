@@ -15,13 +15,13 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='GoodRepair',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('date', models.DateField(verbose_name='維修日期', default=datetime.date.today)),
+                ('id', models.AutoField(auto_created=True, verbose_name='ID', primary_key=True, serialize=False)),
+                ('date', models.DateField(default=datetime.date.today, verbose_name='維修日期')),
                 ('quantity', models.PositiveIntegerField(verbose_name='數量')),
-                ('remark', models.TextField(verbose_name='備註', blank=True)),
+                ('remark', models.TextField(blank=True, verbose_name='備註')),
                 ('who', models.TextField(verbose_name='誰')),
                 ('good', models.ForeignKey(to='goodsManage.Good')),
-                ('person', models.ForeignKey(to='goodsManage.Person', verbose_name='維修人')),
+                ('person', models.ForeignKey(verbose_name='維修人', to='goodsManage.Person')),
             ],
             options={
                 'ordering': ['-date'],

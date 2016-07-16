@@ -1,5 +1,9 @@
 ﻿{% extends 'base.html' %}
 {% load myfilters %}
+﻿{% load staticfiles %}
+{% block script %}
+<script src="{% static 'manual/scriptfile.js' %}"></script>
+{% endblock %}
 {% block formContent %}
 <!-- form inquiry -->
 <div class="row" id="inquiryDatas">
@@ -21,6 +25,9 @@
                 {% endif %}
                 {% if have_toDepartment %}
                 <th>{{ inquiry.toDepartment.label }}</th>
+                {% endif %}
+                {% if have_toPerson %}
+                <th>{{ inquiry.toPerson.label }}</th>
                 {% endif %}
                 {% if have_date %}
                 <th>{{ inquiry.fromDate.label }}</th>
@@ -57,12 +64,18 @@
                     {{inquiry.person}}
                     {{inquiry.person.errors}}
                 </td>
+                {% endif %}
                 {% if have_toDepartment %}
                 <td width="140pm">
                     {{inquiry.toDepartment}}
                     {{inquiry.toDepartment.errors}}
                 </td>
                 {% endif %}
+                {% if have_toPerson %}
+                <td>
+                    {{inquiry.toPerson}}
+                    {{inquiry.toPerson.errors}}
+                </td>
                 {% endif %}
                 {% if have_date %}
                 <td>
@@ -99,11 +112,136 @@
             {% for rowdatas in tabledatas %}
                 <tr>
                     {% for data in rowdatas %}
-                        <td>{{data}}</td>
+                        <td>
+                            {% if data != "NA" and tableheads|get_at_index:forloop.counter0 == "縮圖" %}
+                                <a href="{{ data }}" TARGET="_blank">
+                                    <img src="{{ data }}" class="img-thumbnail" alt="{{ data }}" width="100" height="100"/>
+                                </a>
+                            {% elif tableheads|get_at_index:forloop.counter0 == "種類" %}
+                                <a href="javascript:void(0)" onclick="appendURL('kind', '{{ data.code }}')"><div style="display: inline">{{data}}</div></a>
+                            {% elif tableheads|get_at_index:forloop.counter0 == "型號" %}
+                                <a href="javascript:void(0)" onclick="appendURL('type', '{{ data }}')"><div style="display: inline">{{data}}</div></a>
+                                <div style="display:inline" class="fold subItem">+</div>
+                                <div style="display:none">
+                                    {% if nbar_now != 'inventory' %}
+                                        <a href="{% url 'goodsManage_inventory' %}?type={{ data }}&ok=yes&inquiry=查詢"><div class="subItem">庫</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'requisition' %}
+                                        <a href="{% url 'goodsManage_requisitionHistory' %}?type={{data}}&ok=yes&inquiry=查詢"><div class="subItem">領</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'back' %}
+                                        <a href="{% url 'goodsManage_backHistory' %}?type={{data}}&ok=yes&inquiry=查詢"><div class="subItem">歸</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'lendBackView' %}
+                                        <a href="{% url 'goodsManage_lendBackView' %}?type={{data}}&ok=yes&inquiry=查詢"><div class="subItem">借</div></a>
+                                    {% endif %}
+                                </div>
+                            {% elif tableheads|get_at_index:forloop.counter0 == "料號" %}
+                                <a href="javascript:void(0)" onclick="appendURL('partNumber', '{{ data }}')"><div style="display: inline">{{data}}</div></a>
+                                <div style="display:inline" class="fold subItem">+</div>
+                                <div style="display:none">
+                                    <a target="_blank" href="http://pdm.cminl.oa/Windchill/servlet/WindchillAuthGW/wt.enterprise.URLProcessor/URLTemplateAction?query=117&number={{ data }}&name=&envLevel=&custLevel=&approvalProcedure=&approvalStatus=&view=&versionIdentifier=&partType=&source=&lifeCycleState=&department=&creator=&modifier=&modifyTimestamp=&submit1=%B7j%B4M&action=DoIntegratedSearch"><div class="subItem">PDM</div></a>
+                                    {% if nbar_now != 'inventory' %}
+                                        <a href="{% url 'goodsManage_inventory' %}?partNumber={{ data }}&ok=yes&inquiry=查詢"><div class="subItem">庫</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'requisition' %}
+                                        <a href="{% url 'goodsManage_requisitionHistory' %}?partNumber={{data}}&ok=yes&inquiry=查詢"><div class="subItem">領</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'back' %}
+                                        <a href="{% url 'goodsManage_backHistory' %}?partNumber={{data}}&ok=yes&inquiry=查詢"><div class="subItem">歸</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'lendBackView' %}
+                                        <a href="{% url 'goodsManage_lendBackView' %}?partNumber={{data}}&ok=yes&inquiry=查詢"><div class="subItem">借</div></a>
+                                    {% endif %}
+                                </div>
+                            {% elif tableheads|get_at_index:forloop.counter0 == "狀態" %}
+                                <a href="javascript:void(0)" onclick="appendURL('department', '{{ data.code }}')"><div style="display: inline">{{data.name}}</div></a>
+                            {% elif "借入人" in tableheads|get_at_index:forloop.counter0 %}
+                                <a href="javascript:void(0)" onclick="appendURL('toPerson', '{{ data.name }}')"><div style="display: inline">{{data.name}}</div></a>
+                                <div style="display:inline" class="fold subItem">+</div>
+                                <div style="display:none">
+                                    {% if nbar_now != 'ownerView' %}
+                                        <a href="{% url 'goodsManage_ownerView' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">持</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'requisition' %}
+                                        <a href="{% url 'goodsManage_requisitionHistory' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">領</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'back' %}
+                                        <a href="{% url 'goodsManage_backHistory' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">歸</div></a>
+                                    {% endif %}
+                                </div>
+                            {% elif "人" in tableheads|get_at_index:forloop.counter0 %}
+                                <a href="javascript:void(0)" onclick="appendURL('person', '{{ data.name }}')"><div style="display: inline">{{data.name}}</div></a>
+                                <div style="display:inline" class="fold subItem">+</div>
+                                <div style="display:none">
+                                    {% if nbar_now != 'ownerView' %}
+                                        <a href="{% url 'goodsManage_ownerView' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">持</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'requisition' %}
+                                        <a href="{% url 'goodsManage_requisitionHistory' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">領</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'back' %}
+                                        <a href="{% url 'goodsManage_backHistory' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">歸</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'lendBackView' %}
+                                        <a href="{% url 'goodsManage_lendBackView' %}?toDepartment={{data.department.code}}&toPerson={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">借入</div></a>
+                                        <a href="{% url 'goodsManage_lendBackView' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">借出</div></a>
+                                    {% endif %}
+                                </div>
+                            {% elif "調入部門" in tableheads|get_at_index:forloop.counter0 %}
+                                <a href="javascript:void(0)" onclick="appendURL('toDepartment', '{{ data.code }}')"><div style="display: inline">{{data.name}}</div></a>
+                                {% if nbar_now != 'inventory' %}
+                                    <div style="display:inline" class="fold subItem">+</div>
+                                    <div style="display:none">
+                                        <a href="{% url 'goodsManage_inventory' %}?department={{data.code}}&ok=yes&inquiry=查詢"><div class="subItem">庫</div></a>
+                                    </div>
+                                {% endif %}
+                            {% elif "部門" in tableheads|get_at_index:forloop.counter0 %}
+                                <a href="javascript:void(0)" onclick="appendURL('department', '{{ data.code }}')"><div style="display: inline">{{data.name}}</div></a>
+                                {% if nbar_now != 'inventory' %}
+                                    <div style="display:inline" class="fold subItem">+</div>
+                                    <div style="display:none">
+                                        <a href="{% url 'goodsManage_inventory' %}?department={{data.code}}&ok=yes&inquiry=查詢"><div class="subItem">庫</div></a>
+                                    </div>
+                                {% endif %}
+                            {% elif nbar_now == 'overview' %}
+                                {% if tableheads|get_at_index:forloop.counter0 == "持有數量" %}
+                                    <a href="{% url 'goodsManage_ownerView' %}?type={{rowdatas.1}}&department={{rowdatas.3.code}}&ok=yes&inquiry=查詢">{{data}}</a>
+                                {% elif tableheads|get_at_index:forloop.counter0 == "報廢數量" %}
+                                    <a href="{% url 'goodsManage_wastageHistory' %}?type={{rowdatas.1}}&department={{rowdatas.3.code}}&status=01&ok=yes&inquiry=查詢">{{data}}</a>
+                                {% elif tableheads|get_at_index:forloop.counter0 == "遺失數量" %}
+                                    <a href="{% url 'goodsManage_wastageHistory' %}?type={{rowdatas.1}}&department={{rowdatas.3.code}}&status=02&ok=yes&inquiry=查詢">{{data}}</a>
+                                {% else %}
+                                    {{data}}
+                                {% endif %}
+                            {% elif nbar_now == 'ownerView' %}
+                                {% if tableheads|get_at_index:forloop.counter0 == "領用" %}
+                                    <a href="{% url 'goodsManage_requisitionHistory' %}?type={{rowdatas.1}}&person={{rowdatas.4}}&ok=yes&inquiry=查詢">{{data}}</a>
+                                {% elif tableheads|get_at_index:forloop.counter0 == "歸還" %}
+                                    <a href="{% url 'goodsManage_backHistory' %}?type={{rowdatas.1}}&person={{rowdatas.4}}&ok=yes&inquiry=查詢">{{data}}</a>
+                                {% elif tableheads|get_at_index:forloop.counter0 == "耗損" %}
+                                    <a href="{% url 'goodsManage_wastageHistory' %}?type={{rowdatas.1}}&person={{rowdatas.4}}&ok=yes&inquiry=查詢">{{data}}</a>
+                                {% else %}
+                                    {{data}}
+                                {% endif %}
+                            {% elif nbar_now == 'inventory' %}
+                                {% if tableheads|get_at_index:forloop.counter0 == "進貨中" %}
+                                    <a href="{% url 'goodsManage_wastageHistory' %}?type={{rowdatas.1}}&department={{rowdatas.3.code}}&ok=yes&inquiry=查詢">{{data}}</a>
+                                {% else %}
+                                    {{data}}
+                                {% endif %}
+                            {% else %}
+                                {{data}}
+                            {% endif %}
+                        </td>
                     {% endfor %}
                 </tr>
             {% empty %}
-                <h1>無資料</h1>
+                {% if nbar_now == 'inventory' %}
+                    <h1>無庫存</h1>
+                {% else %}
+                    <h1>無資料，請確認查詢條件</h1>
+                {% endif %}
             {% endfor %}
         <tbody>
     </table>

@@ -92,3 +92,36 @@ caption {
     background-color: #FFFFFF;
     color: #000000;
 }
+
+/* 便利超連結 */
+.subItem {
+	display: inline;
+	border: 1px solid rgba(35, 82, 124, 0.2);
+	padding: 2px;
+}
+
+.fold {
+    cursor: help;
+    color: gray;
+}
+
+/* input type file */
+.btn-file {
+    position: relative;
+    overflow: hidden;
+}
+.btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    background: white;
+    cursor: inherit;
+    display: block;
+}

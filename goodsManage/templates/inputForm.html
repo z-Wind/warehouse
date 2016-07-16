@@ -8,6 +8,11 @@
     var focusID;
 </script>
 <script src="{% static 'manual/scriptfile.js' %}"></script>
+<script src="{% static 'manual/batchProcess.js' %}"></script>
+<script>
+    var csrf = {name:'csrfmiddlewaretoken', value: '{{ csrf_token }}'};
+    var url_batch = "{{ url_batch }}";
+</script>
 {% endblock %}
 
 {% block formContent %}
@@ -42,6 +47,7 @@
                     <th>型號:</th>
                     <td>
                     <input name = "good_type" id = "id_good_type" type = "text" value = "{{goodtype}}" onkeyup="changeList(tempList, 'id_rightList', 'id_rightListSel', this.value.toLowerCase())" onfocus="this.select();tempList=typeList;focusID=this.id">
+                    <div><a href="#" onclick="inventorySearch('id_good_type', '{% url 'goodsManage_inventory' %}?ok=yes&inquiry=查詢')">庫存查詢</a></div>
                     </td>
                 </tr>
                 {{ f.as_table }}
@@ -49,6 +55,16 @@
             <input type="hidden" name="ok" value="yes">
             <input type="submit" value="提交" class="btn btn-warning"  onclick="return doubleCheck()">
         </form>
+        {% if have_batch %}
+            <form action="" method="get">
+                <input type="hidden" name="ok" value="yes">
+                <input type="submit" class="btn btn-success" name="batchInquiry" value="批次範例下載">
+                <span class="file-input btn btn-primary btn-file">
+                    批次上傳
+                    <input type="file" id="batchUpload" accept=".csv" >
+                <span>
+            </form>
+        {% endif %}
     </div>
 
     <!-- right type list -->

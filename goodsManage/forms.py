@@ -17,12 +17,13 @@ class GoodInquiryForm(forms.Form):
     toDate = forms.DateField(required = False, label = '終止日期', widget = SelectDateWidget(years = [y for y in range(2015,2030)]), initial = datetime.date.today())
     status = forms.MultipleChoiceField(required = False, label = '狀態(可複選)', widget = forms.CheckboxSelectMultiple, choices = choices.WASTAGE_STATUS_CHOICES)
     person = forms.CharField(required = False, label = '人名', widget=forms.TextInput(attrs={'size': '5'}), max_length = 6)
+    toPerson = forms.CharField(required = False, label = '借入人', widget=forms.TextInput(attrs={'size': '5'}), max_length = 6)
 
 
 class GoodRequisitionForm(forms.ModelForm):
     quantity = forms.IntegerField(label = '數量', min_value = 1)
     department = forms.ModelChoiceField(queryset = Department.objects.all(), label = '領用部門')
-    personEx = forms.CharField(label = '領用人', widget=forms.TextInput(attrs={'size': '10', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 10)
+    personEx = forms.CharField(label = '領用人', widget=forms.TextInput(attrs={'size': '20', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 20)
 
     class Meta:
         model = GoodRequisition
@@ -48,9 +49,9 @@ class GoodRequisitionForm(forms.ModelForm):
 class GoodRequisitionOuterForm(forms.ModelForm):
     quantity = forms.IntegerField(label = '數量', min_value = 1)
     department = forms.ModelChoiceField(queryset = Department.objects.all(), label = '領用部門')
-    personEx = forms.CharField(label = '領用人', widget=forms.TextInput(attrs={'size': '10', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 10)
+    personEx = forms.CharField(label = '領用人', widget=forms.TextInput(attrs={'size': '20', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 20)
     fromDepartment = forms.ModelChoiceField(queryset = Department.objects.all(), label = '調出部門')
-    personFromEx = forms.CharField(label = '調撥人', widget=forms.TextInput(attrs={'size': '10', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_fromDepartment option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 10)
+    personFromEx = forms.CharField(label = '調撥人', widget=forms.TextInput(attrs={'size': '20', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_fromDepartment option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 20)
 
     class Meta:
         model = GoodRequisition
@@ -96,7 +97,7 @@ class GoodRequisitionOuterForm(forms.ModelForm):
 class GoodBackForm(forms.ModelForm):
     quantity = forms.IntegerField(label = '數量', min_value = 1)
     department = forms.ModelChoiceField(queryset = Department.objects.all(), label = '歸還部門')
-    personEx = forms.CharField(label = '歸還人', widget=forms.TextInput(attrs={'size': '10', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 10)
+    personEx = forms.CharField(label = '歸還人', widget=forms.TextInput(attrs={'size': '20', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 20)
 
     class Meta:
         model = GoodBack
@@ -122,7 +123,7 @@ class GoodBackForm(forms.ModelForm):
 class GoodBackOuterForm(forms.ModelForm):
     quantity = forms.IntegerField(label = '數量', min_value = 1)
     department = forms.ModelChoiceField(queryset = Department.objects.all(), label = '歸還部門')
-    personEx = forms.CharField(label = '歸還人', widget=forms.TextInput(attrs={'size': '10', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 10)
+    personEx = forms.CharField(label = '歸還人', widget=forms.TextInput(attrs={'size': '20', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 20)
     toDepartment = forms.ModelChoiceField(queryset = Department.objects.all(), label = '調入部門')
 
     class Meta:
@@ -175,7 +176,7 @@ class GoodBackOuterForm(forms.ModelForm):
 class GoodBuyForm(forms.ModelForm):
     quantity = forms.IntegerField(label = '數量', min_value = 1)
     department = forms.ModelChoiceField(queryset = Department.objects.all(), label = '購買部門')
-    personEx = forms.CharField(label = '購買人', widget=forms.TextInput(attrs={'size': '10', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 10)
+    personEx = forms.CharField(label = '購買人', widget=forms.TextInput(attrs={'size': '20', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 20)
 
     class Meta:
         model = GoodBuy
@@ -202,7 +203,7 @@ class GoodBuyForm(forms.ModelForm):
 class GoodAllocateForm(forms.ModelForm):
     quantity = forms.IntegerField(label = '數量', min_value = 1)
     fromDepartment = forms.ModelChoiceField(queryset = Department.objects.all(), label = '調出部門')
-    personEx = forms.CharField(label = '調出人', widget=forms.TextInput(attrs={'size': '10', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_fromDepartment option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 10)
+    personEx = forms.CharField(label = '調出人', widget=forms.TextInput(attrs={'size': '20', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_fromDepartment option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 20)
 
     class Meta:
         model = GoodAllocate
@@ -236,7 +237,7 @@ class GoodAllocateForm(forms.ModelForm):
 class GoodWastageForm(forms.ModelForm):
     quantity = forms.IntegerField(label = '數量', min_value = 1)
     department = forms.ModelChoiceField(queryset = Department.objects.all(), label = '耗損部門')
-    personEx = forms.CharField(label = '耗損人', widget=forms.TextInput(attrs={'size': '10', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 10)
+    personEx = forms.CharField(label = '耗損人', widget=forms.TextInput(attrs={'size': '20', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 20)
 
     class Meta:
         model = GoodWastage
@@ -262,7 +263,7 @@ class GoodWastageForm(forms.ModelForm):
 class GoodRepairForm(forms.ModelForm):
     quantity = forms.IntegerField(label = '數量', min_value = 1)
     department = forms.ModelChoiceField(queryset = Department.objects.all(), label = '維修部門')
-    personEx = forms.CharField(label = '維修人', widget=forms.TextInput(attrs={'size': '10', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 10)
+    personEx = forms.CharField(label = '維修人', widget=forms.TextInput(attrs={'size': '20', 'onkeyup':"changeList(tempList, 'id_rightList', 'id_rightListSel', $('#id_department option:selected').text(), this.value)", 'onfocus':'this.select();tempList=peopleList;focusID=this.id'}), max_length = 20)
 
     class Meta:
         model = GoodRepair

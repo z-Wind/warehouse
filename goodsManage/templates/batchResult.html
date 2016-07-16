@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load myfilters %}
+﻿{% load staticfiles %}
+{% block script %}
+<script src="{% static 'manual/scriptfile.js' %}"></script>
+<script src="{% static 'manual/batchProcess.js' %}"></script>
+{% endblock %}
+
+{% block dataTable %}
+<!-- data Table -->
+<div class="row" id="rawDatas">
+    <table class="table table-bordered table-hover table-condensed blueTable">
+        <caption>上傳資料</caption>
+        <thead>
+            <tr>
+            {% for tablehead in tableheads %}
+                <th>{{tablehead}}</th>
+            {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for rowdatas in tabledatas %}
+                <tr>
+                    {% for data in rowdatas %}
+                        <td>
+                            {% if "人" in tableheads|get_at_index:forloop.counter0 %}
+                                {{data.name}}
+                            {% else %}
+                                {{data}}
+                            {% endif %}
+                            {% if tableheads|get_at_index:forloop.counter0 == "型號" %}
+                                <div style="display:inline" class="fold subItem">+</div>
+                                <div style="display:none">
+                                    {% if nbar_now != 'inventory' %}
+                                        <a href="{% url 'goodsManage_inventory' %}?type={{ data }}&ok=yes&inquiry=查詢"><div class="subItem">庫</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'requisition' %}
+                                        <a href="{% url 'goodsManage_requisitionHistory' %}?type={{data}}&ok=yes&inquiry=查詢"><div class="subItem">領</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'back' %}
+                                        <a href="{% url 'goodsManage_backHistory' %}?type={{data}}&ok=yes&inquiry=查詢"><div class="subItem">歸</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'lendBackView' %}
+                                        <a href="{% url 'goodsManage_lendBackView' %}?type={{data}}&ok=yes&inquiry=查詢"><div class="subItem">借</div></a>
+                                    {% endif %}
+                                </div>
+                            {% elif tableheads|get_at_index:forloop.counter0 == "料號" %}
+                                <div style="display:inline" class="fold subItem">+</div>
+                                <div style="display:none">
+                                    <a target="_blank" href="http://pdm.cminl.oa/Windchill/servlet/WindchillAuthGW/wt.enterprise.URLProcessor/URLTemplateAction?query=117&number={{ data }}&name=&envLevel=&custLevel=&approvalProcedure=&approvalStatus=&view=&versionIdentifier=&partType=&source=&lifeCycleState=&department=&creator=&modifier=&modifyTimestamp=&submit1=%B7j%B4M&action=DoIntegratedSearch"><div class="subItem">PDM</div></a>
+                                    {% if nbar_now != 'inventory' %}
+                                        <a href="{% url 'goodsManage_inventory' %}?partNumber={{ data }}&ok=yes&inquiry=查詢"><div class="subItem">庫</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'requisition' %}
+                                        <a href="{% url 'goodsManage_requisitionHistory' %}?partNumber={{data}}&ok=yes&inquiry=查詢"><div class="subItem">領</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'back' %}
+                                        <a href="{% url 'goodsManage_backHistory' %}?partNumber={{data}}&ok=yes&inquiry=查詢"><div class="subItem">歸</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'lendBackView' %}
+                                        <a href="{% url 'goodsManage_lendBackView' %}?partNumber={{data}}&ok=yes&inquiry=查詢"><div class="subItem">借</div></a>
+                                    {% endif %}
+                                </div>
+                            {% elif "借入人" in tableheads|get_at_index:forloop.counter0 %}
+                                <div style="display:inline" class="fold subItem">+</div>
+                                <div style="display:none">
+                                    {% if nbar_now != 'ownerView' %}
+                                        <a href="{% url 'goodsManage_ownerView' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">持</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'requisition' %}
+                                        <a href="{% url 'goodsManage_requisitionHistory' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">領</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'back' %}
+                                        <a href="{% url 'goodsManage_backHistory' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">歸</div></a>
+                                    {% endif %}
+                                </div>
+                            {% elif "人" in tableheads|get_at_index:forloop.counter0 %}
+                                <div style="display:inline" class="fold subItem">+</div>
+                                <div style="display:none">
+                                    {% if nbar_now != 'ownerView' %}
+                                        <a href="{% url 'goodsManage_ownerView' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">持</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'requisition' %}
+                                        <a href="{% url 'goodsManage_requisitionHistory' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">領</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'back' %}
+                                        <a href="{% url 'goodsManage_backHistory' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">歸</div></a>
+                                    {% endif %}
+                                    {% if nbar_now != 'lendBackView' %}
+                                        <a href="{% url 'goodsManage_lendBackView' %}?toDepartment={{data.department.code}}&toPerson={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">借入</div></a>
+                                        <a href="{% url 'goodsManage_lendBackView' %}?department={{data.department.code}}&person={{data.name}}&ok=yes&inquiry=查詢"><div class="subItem">借出</div></a>
+                                    {% endif %}
+                                </div>
+                            {% elif "調入部門" in tableheads|get_at_index:forloop.counter0 %}
+                                {% if nbar_now != 'inventory' %}
+                                    <div style="display:inline" class="fold subItem">+</div>
+                                    <div style="display:none">
+                                        <a href="{% url 'goodsManage_inventory' %}?department={{data.code}}&ok=yes&inquiry=查詢"><div class="subItem">庫</div></a>
+                                    </div>
+                                {% endif %}
+                            {% elif "部門" in tableheads|get_at_index:forloop.counter0 %}
+                                {% if nbar_now != 'inventory' %}
+                                    <div style="display:inline" class="fold subItem">+</div>
+                                    <div style="display:none">
+                                        <a href="{% url 'goodsManage_inventory' %}?department={{data.code}}&ok=yes&inquiry=查詢"><div class="subItem">庫</div></a>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        <tbody>
+    </table>
+</div>
+{% endblock %}

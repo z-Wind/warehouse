@@ -51,6 +51,9 @@
                         <li {% if nbar_now == 'ownerView' %}class="active"{% endif %}>
                             <a href="{% url 'goodsManage_ownerView'%}">持有</a>
                         </li>
+                        <li {% if nbar_now == 'lendBackView' %}class="active"{% endif %}>
+                            <a href="{% url 'goodsManage_lendBackView'%}">外借推測</a>
+                        </li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right">
                         <li class="dropdown-toggle {% if nbar_now == 'requisition' %}active{% endif %}">
@@ -146,6 +149,7 @@
             {% block overview %}{% endblock %}
             {% block formContent %}{% endblock %}
             {% block dataTable %}{% endblock %}
+            {% block authLog %}{% endblock %}
         </div>
 
         <!-- jQuery (Bootstrap 所有外掛均需要使用) -->
