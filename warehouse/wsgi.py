@@ -10,9 +10,14 @@ https://docs.djangoproject.com/en/1.8/howto/deployment/wsgi/
 import os
 
 from django.core.wsgi import get_wsgi_application
-from whitenoise.django import DjangoWhiteNoise
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "warehouse.settings.production")
 
 application = get_wsgi_application()
-application = DjangoWhiteNoise(application)
+	
+try:
+	from dj_static import Cling, MediaCling
+	application = Cling(get_wsgi_application())
+	application = Cling(MediaCling(get_wsgi_application()))
+except:
+	pass
