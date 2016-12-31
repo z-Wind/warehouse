@@ -56,4 +56,8 @@ docs/_build/
 # PyBuilder
 target/
 
+# 自定
 rawData/
+/Others/
+*.sqlite3
+*.pyc
